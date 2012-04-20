@@ -65,24 +65,25 @@ short cmask=64;
 
 int main(int argc,char**argv)
 {
-	int c,optindex=1;
+	int c,optindex=1,np=0;
 	/*parse options*/
         while(1){
                 c=getopt_long(argc,argv,shortopt,longopt,&optindex);
                 if(c==-1)break;
+                np=1;
                 switch(c){
 			//formatting
                         case 's':setformat(FMT_SHORT);break;
                         case 'd':setformat(FMT_DETAIL);break;
                         case 'f':setformat(FMT_FULL);break;
 			//output
-                        case 'n':printaddr(IP6_NETID);break;
-                        case 'H':printaddr(IP6_HOSTID);break;
-                        case 'm':printaddr(IP6_PREFIX);break;
-			case 'N':printaddr(IP6_NETID|IP6_PREFIX);break;
-			case 'I':printaddr(IP6_HOSTID|IP6_PREFIX);break;
-			case 'i':printaddr(IP6_NETID|IP6_HOSTID);break;
-			case '6':printaddr(IP6_NETID|IP6_HOSTID|IP6_PREFIX);break;
+                        case 'n':np=0;printaddr(IP6_NETID);break;
+                        case 'H':np=0;printaddr(IP6_HOSTID);break;
+                        case 'm':np=0;printaddr(IP6_PREFIX);break;
+			case 'N':np=0;printaddr(IP6_NETID|IP6_PREFIX);break;
+			case 'I':np=0;printaddr(IP6_HOSTID|IP6_PREFIX);break;
+			case 'i':np=0;printaddr(IP6_NETID|IP6_HOSTID);break;
+			case '6':np=0;printaddr(IP6_NETID|IP6_HOSTID|IP6_PREFIX);break;
 			case '4':printip4();break;
                         case 'M':printmac();break;
 			//mode
@@ -114,6 +115,7 @@ int main(int argc,char**argv)
         	optind++;
         }
         //print last changes
+	if(np)printaddr(IP6_NETID|IP6_HOSTID|IP6_PREFIX);
         //done
 	return 0;
 }
