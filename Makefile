@@ -5,5 +5,8 @@ CC=gcc
 CFLAGS=-Wall -g
 LDFLAGS=
 
-ip6calc: ip6calc.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+ip6calc: ip6calc.o calculate.o help.o output.o parseaddr.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $^
