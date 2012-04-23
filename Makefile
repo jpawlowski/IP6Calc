@@ -4,6 +4,7 @@
 CC=gcc
 CFLAGS=-Wall -g
 LDFLAGS=
+INSTALL=install
 
 CFILES=$(shell echo *.c)
 OFILES=$(CFILES:.c=.o)
@@ -23,12 +24,17 @@ clean:
 	-rm -f *.o *~ *.bak help.h
 
 distclean: clean
-	-rm -f ip6calc
+	-rm -f ip6calc .config.make
 
 .PHONY: clean distclean
 
-config configure:
-	@echo Dummy configure.
+.config.make:
+	./configure
+
+include .config.make
 
 install:
-	echo $(DISTROOT)
+	$(INSTALL) -t $(DESTDIR)$(BINDIR) -s ip6calc
+	$(INSTALL) -t $(DESTDIR)$(BINDIR) ip4toip6
+	$(INSTALL) -m 644 -t $(DESTDIR)$(DOCDIR) help.txt
+	$(INSTALL) -m 644 -t $(DESTDIR)$(DOCDIR) README

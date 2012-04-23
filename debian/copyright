@@ -1,0 +1,26 @@
+This work was packaged for Debian by:
+
+    Konrad Rosenbaum <konrad@silmor.de> on Fri, 20 Apr 2012 11:40:29 +0200
+
+It was downloaded from:
+
+    git://git.silmor.de/konrad/ip6calc.git
+
+Upstream Author(s):
+
+    Konrad Rosenbaum <konrad@silmor.de>
+
+Copyright:
+
+    Copyright (C) 2009,2012 Konrad Rosenbaum
+
+License:
+
+    GPLv3
+
+The Debian packaging is:
+
+    Copyright (C) 2012 Konrad Rosenbaum <konrad@silmor.de>
+
+and is licensed under the GPL version 3,
+see "/usr/share/common-licenses/GPL-3".

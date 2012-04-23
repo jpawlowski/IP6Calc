@@ -1,0 +1,16 @@
+Source: ip6calc
+Section: unknown
+Priority: extra
+Maintainer: Konrad Rosenbaum <konrad@devant.devant.lan.local>
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.8.4
+Homepage: http://silmor.de/ipv6.calc.php
+Vcs-Git: git://git.silmor.de/konrad/ip6calc.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/ip6calc.git;a=summary
+
+Package: ip6calc
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: IPv6 address calculation tool
+ This package contains the ip6calc program that allows to reformat, merge,
+ mangle and recalculate IPv6 addresses.
