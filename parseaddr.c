@@ -51,21 +51,20 @@ void mergeaddr(ip6addr ip,int mask)
 		cmask=mask;
 }
 
-void parsemac(const char*a)
+void parsemac(const char*s)
 {
 	int i;
 	ip6addr ip={0xfe80,0,0,0, 0,0,0,0};
 	unsigned char mac[6]={0,0,0, 0,0,0};
-	const char*s=a+4;
 	/*parse*/
 	if(strlen(s)!=17){
-		fprintf(stderr,"address %s is not a valid MAC: must be 12 '-' or ':'  separated hex digits\n",a);
+		fprintf(stderr,"address %s is not a valid MAC: must be 12 '-' or ':'  separated hex digits\n",s);
 		exit(1);
 	}
 	for(i=0;i<17;i++){
 		if((i%3)==2){
 			if(s[i]!='-' && s[i]!=':'){
-				fprintf(stderr,"address %s is not a valid MAC: invalid separator\n",a);
+				fprintf(stderr,"address %s is not a valid MAC: invalid separator\n",s);
 				exit(1);
 			}
 			continue;
@@ -75,7 +74,7 @@ void parsemac(const char*a)
 		if(s[i]>='a' && s[i]<='f')mac[i/3]|=s[i]-'a'+10;else
 		if(s[i]>='A' && s[i]<='F')mac[i/3]|=s[i]-'A'+10;
 		else{
-			fprintf(stderr,"address %s is not a valid MAC: it contains non-hex digits\n",a);
+			fprintf(stderr,"address %s is not a valid MAC: it contains non-hex digits\n",s);
 			exit(1);
 		}
 	}
@@ -137,28 +136,21 @@ void parseip4(const char*s)
 	mergeaddr(ip,300);
 }
 
-void parseaddr(const char*a)
+int isip4(const char*);
+
+void parseip6(const char*a)
 {
 	int i,j,k,l,mask=255,m,semcnt=0,haddblc=0;
 	ip6addr ip={0,0,0,0, 0,0,0,0};
-	/*stage 0: is it an IP or a MAC?*/
-	if(strncmp("mac:",a,4)==0){
-		parsemac(a);
-		return;
-	}
-	if(strncmp("ip4:",a,4)==0){
-		parseip4(a+4);
-		return;
-	}
 	/*stage 1: parse local addr*/
 	if(a[0]==':' && a[1]!=':'){
-		fprintf(stderr,"address %s is not valid: it must start with a hex digit or ::\n",a);
+		fprintf(stderr,"address %s is not a valid IPv6 address: it must start with a hex digit or ::\n",a);
 		exit(1);
 	}
 	m=-1;
 	for(i=j=0;a[i];i++){
 		if(j>7){
-			fprintf(stderr,"address %s is not valid: more than 8 segments\n",a);
+			fprintf(stderr,"address %s is not a valid IPv6 address: more than 8 segments\n",a);
 			exit(1);
 		}
 		if(a[i]=='/')break;
@@ -168,14 +160,14 @@ void parseaddr(const char*a)
 			if(m<0){
 				/*its :: */
 				if(haddblc){
-					fprintf(stderr,"address %s is not valid: only one :: is allowed\n",a);
+					fprintf(stderr,"address %s is not a valid IPv6 address: only one :: is allowed\n",a);
 					exit(1);
 				}
 				haddblc++;
 				l=0;
 				for(k=i+1;a[k];k++)if(a[k]==':')l++;
 				if((7-l)<j){
-					fprintf(stderr,"address %s is not valid: too many :\n",a);
+					fprintf(stderr,"address %s is not a valid IPv6 address: too many :\n",a);
 					exit(1);
 				}
 				j=7-l;
@@ -189,11 +181,11 @@ void parseaddr(const char*a)
 			if(a[i]>='a'&&a[i]<='f')m|=a[i]-'a'+10;else
 			if(a[i]>='A'&&a[i]<='F')m|=a[i]-'A'+10;
 			else{
-				fprintf(stderr,"address %s is not valid: %c is not a hex digit\n",a,a[i]);
+				fprintf(stderr,"address %s is not a valid IPv6 address: %c is not a hex digit\n",a,a[i]);
 				exit(1);
 			}
 			if(m>0xffff){
-				fprintf(stderr,"address %s is not valid: max. 4 hex digits per segment\n",a);
+				fprintf(stderr,"address %s is not a valid IPv6 address: max. 4 hex digits per segment\n",a);
 				exit(1);
 			}
 		}
@@ -201,16 +193,16 @@ void parseaddr(const char*a)
 	/*sanity checks*/
 	if(i){
 		if(semcnt<2 || semcnt>7){
-			fprintf(stderr,"address %s is not valid: not enough or too many segments\n",a);
+			fprintf(stderr,"address %s is not a valid IPv6 address: not enough or too many segments\n",a);
 			exit(1);
 		}
 		if(i>2)
 		if(a[i-1]==':'&&a[i-2]!=':'){
-			fprintf(stderr,"address %s is not valid: it must not end with a single :\n",a);
+			fprintf(stderr,"address %s is not a valid IPv6 address: it must not end with a single :\n",a);
 			exit(1);
 		}
 		if(j!=7){
-			fprintf(stderr,"address %s is not valid: wrong number of segments\n",a);
+			fprintf(stderr,"address %s is not a valid IPv6 address: wrong number of segments\n",a);
 			exit(1);
 		}
 		if(m>=0)ip[j]=m;
@@ -240,4 +232,80 @@ void parseaddr(const char*a)
 	}
 	/*stage 2: merge*/
 	mergeaddr(ip,mask);
+}
+
+///check whether the string is an IPv4 address
+int isip4(const char*a)
+{
+	int num=0,ctrdot=0;
+	const char*c;
+	//check it is not the NULL string
+	if(!a || *a==0)return 0;
+	//check it only contains dots and digits
+	for(c=a;*c;c++)
+		if(*c!='.' && (*c<'0' || *c>'9'))return 0;
+	//check syntax: last and first are not dots
+	c--;
+	if(*a=='.' || *c=='.')return 0;
+	//check numbers are 0..255
+	for(c=a;*c;c++){
+		if(*c=='.'){
+			if(++ctrdot > 3)return 0;
+			num=0;
+		}else{
+			num+=*c-'0';
+			if(num>255)return 0;
+		}
+	}
+	//done and survived so far
+	return 1;
+}
+
+///check that it is a MAC address
+int ismac(const char*a)
+{
+	int i;
+	//MACs are always 17 chars long
+	if(strlen(a)!=17)return 0;
+	//check for pattern
+	for(i=0;i<17;i++){
+		if(i%3 == 2){
+			if(a[i]!='-' && a[i]!=':')return 0;
+		}else
+			if((a[i]<'0' || a[i]>'9')&&
+			   (a[i]<'a' || a[i]>'f')&&
+			   (a[i]<'A' || a[i]>'F'))
+				return 0;
+	}
+	//done
+	return 1;
+}
+
+void parseaddr(const char*a)
+{
+	/*stage 0: does it have a prefix?*/
+	if(strncmp("mac:",a,4)==0){
+		parsemac(a+4);
+		return;
+	}
+	if(strncmp("ip4:",a,4)==0){
+		parseip4(a+4);
+		return;
+	}
+	if(strncmp("ip6:",a,4)==0){
+		parseip6(a+4);
+		return;
+	}
+	/*stage 1: try to detect syntax (IPv4 and MAC are scanned first, since
+	they are syntactically more strict)*/
+	if(isip4(a)){
+		parseip4(a);
+		return;
+	}
+	if(ismac(a)){
+		parsemac(a);
+		return;
+	}
+	/*stage 2: treat as IPv6*/
+	parseip6(a);
 }

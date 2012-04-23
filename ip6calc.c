@@ -41,6 +41,7 @@ static struct option longopt[]= {
  {"hostid",0,0,'H'},
  {"hostmask",0,0,'I'},
  {"mask",0,0,'m'},
+ {"prefix",0,0,'m'},
  {"mac",0,0,'M'},
  {"help",0,0,'h'},
  {"ipaddr",0,0,'i'},
