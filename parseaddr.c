@@ -1,7 +1,7 @@
 /*
 *  C Implementation: ip6calc
 *
-* Description: a simple tool to calculate IPv6 addresses
+* Description: parsing addresses, and MACs
 *
 *
 * Author: Konrad Rosenbaum <konrad@silmor.de>, (C) 2009,2012

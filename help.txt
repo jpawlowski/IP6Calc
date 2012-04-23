@@ -2,53 +2,158 @@ IPv6 calculator
 (c) Konrad Rosenbaum, 2009, 2012
 this program is protected under the GNU GPLv3 or at your option any newer
 
+Parameters
+-----------
+
+Parameters are processed in the order they are given on the command line.
+They can represent an address, formatting option, or output command.
+Each time an address is encountered it is merged into the current buffer -
+this can be used to recombine different network prefixes and host IDs.
+
 Address parameters:
   2001:db8::1/64 - address and mask in standard IPv6 notation
-  2001:db8::1 - same address, mask is assumed to be /128
+  2001:db8::1 - same address, but the mask is unchanged
+  2001:db8:0:0:0:0:0:1 - also the same address more verbose
   /64 - keeps the currently calculated address, but changes the netmask
-  mac:00-11-22-33-44-55 - the mac will be translated into a link local
-    address fe80::211:22ff:fe33:4455/64
-  mac:00-11-22-33-44-55/128 - same translation, but explicit netmask
-  if multiple addresses are given the program attempts to merge them
+  :: or ::0 - represents the NULL-address (also the "ANY address")
 
-Output options:
-  -h | --help
-    display this help text and exit
+  mac:00-11-22-33-44-55 - an ethernet MAC address, it must contain the "mac:"
+    prefix and must consist of 6 octets in hex notation divided by dashes; 
+    the mac will be translated into a link local address 
+    fe80::211:22ff:fe33:4455
+  mac:00-11-22-33-44-55/128 - same translation, but explicit netmask
+
+  ip4:10.0.1.2 - an IPv4 address, it must start with "ip4:" and contain four
+    octets in decimal notation separated by dots; the address will be
+    translated into an IPv4-embedded address ::a00:102/64; network masks are
+    not allowed for this format
+
+Each time an address is encountered it is merged with the one currently in
+the internal buffer: both the buffer and the new address are split at the
+currently set network mask and the network ID of one of them is combined with
+the host ID of the other. After that the network prefix/mask is set to the
+new value (if one was present).
+
+Output formatting:
   -s | --short
     print short IPv6 output (eg. 2001:db8::1/128) - this is the default
   -d | --detail
     print detailed IPv6 output (eg. 2001:db8:0:0:0:0:0:1/128)
   -f | --full
     print full IPv6 output (eg. 2001:0db8:0000:0000:0000:0000:0000:0001)
+
+Immediate output:
   -n | --netid
-    include the network ID into the output
+    print the network ID of the current buffer
   -H | --hostid
-    include the host ID into the output
+    print the host ID of the current buffer
   -m | --mask
-    include the network mask of the last component
+    print the network mask (prefix length) of the current buffer
+  -N | --netmask
+    print the network ID and mask/prefix
+  -I | --hostmask
+    print the host |ID and mask/prefix
+  -i | --ipaddr
+    print the IPv6 address (incl. network and host ID) without prefix
+  -6 | --ipv6
+    prints the complete IPv6 address and prefix of the current buffer;
+    if there is no other output command at the end of operations then this
+    option is assumed
   -M | --mac
     attempt to extract a MAC address from the resulting host ID
-  -6 | --ipv6
-    alias for -Hnm, this is the default if there are no other output parameters
   -4 | --ipv4
     print the last 32 bits of the address as an IPv4 address
 
-Examples:
+Address Mangling:
+  -r n | --shr=n | --shift-right=n
+    shift the entire address n bits to the right, pad with zeroes on the left
+  -l n | --shl=n | --shift-left=n
+    shift the entire address n bits to the left, pad with zeroes on the right
+  -R n | --ror=n | --rotate-right=n
+    rotate the entire address n bits to the right, bits shifted off the right
+    are re-appended on the left
+  -L n | --rol=n | --rotate-left=n
+    rotate the entire address n bits to the left, bits shifted off the left
+    are re-appended on the right
+
+Address Merge Mode:
+   These options switch the mode in which new addresses are merged into the
+   current buffer:
+  -e | --merge-host
+    replace the HOST ID of the buffer with the HOST ID of the new address
+    This is the default.
+  -E | --merge-net
+    replace the NET ID of the buffer with the NET ID of the new address
+
+Printing help:
+  -h | --help
+    display the help text
+  -g | --gpl
+    display the GPL
+
+
+Examples
+---------
+
+reformat an address:
   ./ip6calc 2001:db8::1/64
-  -> 2001:db8::/64
-  ./ip6calc 2001:db8::1/64 fe80::211:22ff:fe33:4455
-    -> 2001:db8::211:22ff:fe33:4455/128
-  ./ip6calc 2001:db8::1/64 fe80::211:22ff:fe33:4455 /64
+   -> 2001:db8::1/64
+  ./ip6calc 2001:db8::0:1/64
+   -> 2001:db8::1/64
+  ./ip6calc 2001:db8::1 --full --ipaddr
+   -> 2001:0db8:0000:0000:0000:0000:0000:0001
+
+Convert IPv4 or MAC addresses into IPv4-embedded or link local:
+  ./ip6calc ip4:10.1.2.3 --ipaddr
+    -> ::a01:203
+  ./ip6calc mac:00-11-22-33-44-55
+    -> fe80::211:22ff:fe33:4455
+
+Calculate the globally routable address of a host from the network prefix and
+the link local address:
+  ./ip6calc 2001:db8::/64 fe80::211:22ff:fe33:4455
     -> 2001:db8::211:22ff:fe33:4455/64
-  ./ip6calc --netid 2001:db8::211:22ff:fe33:4455/64
+...or from the MAC address:
+  ./ip6calc 2001:db8::/64 mac:00-11-22-33-44-55
+    -> 2001:db8::211:22ff:fe33:4455/64
+
+Extract Network ID, Host ID, Prefix, or MAC from an address
+  ./ip6calc 2001:db8::211:22ff:fe33:4455/64 --netid
     -> 2001:db8::
-  ./ip6calc --hostid 2001:db8::211:22ff:fe33:4455/64
+  ./ip6calc 2001:db8::211:22ff:fe33:4455/64 --hostid
     -> ::211:22ff:fe33:4455
-  ./ip6calc --mask 2001:db8::211:22ff:fe33:4455/64
+  ./ip6calc 2001:db8::211:22ff:fe33:4455/64 --mask
     -> /64
-  ./ip6calc --netid --hostid --mask 2001:db8::211:22ff:fe33:4455/64
+  ./ip6calc 2001:db8::211:22ff:fe33:4455/64 --ipv6
     -> 2001:db8::211:22ff:fe33:4455/64
-  ./ip6calc 2001:db8::211:22ff:fe33:4455/64
-    -> 2001:db8::211:22ff:fe33:4455/64
-  ./ip6calc --mac 2001:db8::211:22ff:fe33:4455
+  ./ip6calc 2001:db8::211:22ff:fe33:4455 --mac
     -> MAC=00-11-22-33-44-55
+
+Convert an IPv4 address into a 6to4 prefix:
+  ./ip6calc ip4:192.0.2.33 --shift-left=80 /16 --merge-net 2002:: /48
+    -> 2002:c000:221::0/48
+    - the following operations take place:
+      1) take ::c000:221/64 into the buffer (IPv6 embedded of 192.0.2.33)
+      2) shift it left by 80 bits (the buffer now contains 0:c000:221::/64)
+         <- 128 (size of IPv6 address) minus 48 (the new prefix) equals 80
+      3) change the prefix to /16
+      4) merge in 2002:: as new network ID (2001:c000:221::/16)
+      5) change the prefix to /48
+      6) implicit output (a changed buffer implies --ipv6)
+more complex is the calculation into a 6rd prefix, assuming the
+provider prefix is 2001:db8:1000:/36 and the last 20 bits of the assigned
+(NAT'ed) IPv4 address 10.111.222.333 of the customer are to be merged in
+to get a /56 prefix:
+  ./ip6calc ::/108 ip4:10.111.222.333 --shift-left=72 /36 \
+            --merge-net 2001:db8:1000:: /56
+    -> 2001:db8:1fdf:4d00::0/56
+    - the following operations take place:
+      1) take the NULL address as a /108 into the buffer, so the next operation
+         will use 20 bits of the right side of the new address
+      2) merge the last 20 bits of 10.111.222.333 into it
+      3) shift the address 72 bits to the left (yielding 0:0:fdf:4d00::/108)
+         <- 128 (size of IPv6 address) minus 56 (new prefix) equals 72
+      4) set the prefix length to /36
+      5) prepend with 2001:db8:1000::/36
+      6) reset the prefix length to /56
+      7) implicit output (a changed buffer implies --ipv6)

@@ -82,5 +82,7 @@ void rolleft(const char*);
 void printhelp(const char*);
 ///prints a short syntactic error message
 void printerror(const char*);
+///prints the license
+void printgpl();
 
 #endif

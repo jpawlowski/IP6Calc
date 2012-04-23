@@ -1,7 +1,7 @@
 /*
 *  C Implementation: ip6calc
 *
-* Description: a simple tool to calculate IPv6 addresses
+* Description: a simple tool to calculate IPv6 addresses, main program and options parsing
 *
 *
 * Author: Konrad Rosenbaum <konrad@silmor.de>, (C) 2009,2012
@@ -31,7 +31,7 @@
 #define OUT_INIT 0x8007
 
 
-static char shortopt[]="-hsdfnNHmiIM64DR:r:L:l:eE";
+static char shortopt[]="-hsdfnNHmiIM64R:r:L:l:eEg";
 static struct option longopt[]= {
  {"short",0,0,'s'},
  {"detail",0,0,'d'},
@@ -43,7 +43,6 @@ static struct option longopt[]= {
  {"mask",0,0,'m'},
  {"mac",0,0,'M'},
  {"help",0,0,'h'},
- {"debug",0,0,'D'},
  {"ipaddr",0,0,'i'},
  {"ipv6",0,0,'6'},
  {"ipv4",0,0,'4'},
@@ -57,6 +56,7 @@ static struct option longopt[]= {
  {"rotate-left",1,0,'L'},
  {"merge-host",0,0,'e'},
  {"merge-net",0,0,'E'},
+ {"gpl",0,0,'g'},
  {0,0,0,0}
 };
 
@@ -70,7 +70,7 @@ int main(int argc,char**argv)
         while(1){
                 c=getopt_long(argc,argv,shortopt,longopt,&optindex);
                 if(c==-1)break;
-                np=1;
+                np++;
                 switch(c){
 			//formatting
                         case 's':setformat(FMT_SHORT);break;
@@ -89,7 +89,6 @@ int main(int argc,char**argv)
 			//mode
 			case 'e':setmergemode(MERGE_HOST);break;
 			case 'E':setmergemode(MERGE_NET);break;
-			case 'D':break;
 			//shifty stuff
 			case 'r':shiftright(optarg);break;
 			case 'R':rolright(optarg);break;
@@ -97,16 +96,20 @@ int main(int argc,char**argv)
 			case 'L':rolleft(optarg);break;
 			//parsing
 			case 1:parseaddr(optarg);break;
-			//calculation
 			//errors
                         default:
                                 printerror(argv[0]);
                                 return 1;
                                 break;
+			//help
                         case 'h':
                                 printhelp(argv[0]);
-                                return 0;
+				np--;
                                 break;
+			case 'g':
+				printgpl();
+				np--;
+				break;
                 }
         }
         /*parse addresses after regular arguments*/
