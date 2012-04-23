@@ -28,5 +28,3 @@ The program currently does not understand IPv4-mapped addresses in the form
 ::1.2.3.4
 
 There are no unit tests yet (this should be doable with a simple script).
-
-"./ip6calc 2001:db8::" yields "2001:db8::0/64" instead of "2001:db8::/64"

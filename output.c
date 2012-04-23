@@ -70,7 +70,7 @@ void printshort(ip6addr caddr)
 		return;
 	}
 	/*find longest stretch of zeroes*/
-	for(i=0;i<7;i++){
+	for(i=0;i<8;i++){
 		if(caddr[i]){
 			/*check for maximum*/
 			if(zl>mzl){
