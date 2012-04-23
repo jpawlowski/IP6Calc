@@ -3,3 +3,8 @@
 *.o
 ip6calc
 help.h
+debian/changelog
+.config.make
+debian/files
+debian/ip6calc.debhelper.log
+debian/ip6calc.substvars

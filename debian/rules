@@ -11,3 +11,7 @@
 
 %:
 	dh $@ 
+
+binary:
+	debian/gencl
+	dh binary

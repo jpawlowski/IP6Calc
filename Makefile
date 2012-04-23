@@ -34,7 +34,9 @@ distclean: clean
 include .config.make
 
 install:
+	$(INSTALL) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL) -t $(DESTDIR)$(BINDIR) -s ip6calc
 	$(INSTALL) -t $(DESTDIR)$(BINDIR) ip4toip6
+	$(INSTALL) -d $(DESTDIR)$(DOCDIR)
 	$(INSTALL) -m 644 -t $(DESTDIR)$(DOCDIR) help.txt
 	$(INSTALL) -m 644 -t $(DESTDIR)$(DOCDIR) README

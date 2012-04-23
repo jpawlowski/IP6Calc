@@ -7,7 +7,7 @@ mandir=/share/man
 prefix=/usr/local
 docdir=/share/doc/ip6calc
 
-TEMP=$(getopt -l prefix: -l mandir: -l bindir: -- "" "$@")
+TEMP=$(getopt -l prefix: -l mandir: -l bindir: -- "" "$@" 2>/dev/null )
 
 eval set -- "$TEMP"
 while true ; do
