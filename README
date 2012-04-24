@@ -24,7 +24,6 @@ see help.txt
 Known Bugs, TODO
 -----------------
 
-The program currently does not understand IPv4-mapped addresses in the form
-::1.2.3.4
+add embedded IPv4 output
 
 There are no unit tests yet (this should be doable with a simple script).

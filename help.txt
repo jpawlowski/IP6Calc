@@ -17,6 +17,10 @@ Address parameters:
   ip6:2001:db8::1 - same address, explicitly stating it is IPv6
   /64 - keeps the currently calculated address, but changes the netmask
   :: or ::0 - represents the NULL-address (also the "ANY address")
+  ::10.1.2.3 - represents an embedded IPv4 address
+    (equivalent to ::a01:203)
+  2001:db8::10.1.2.3/96 - embedded IPv4 address with a prefix length
+    (translated to 2001:db8::a01:203/96)
 
   00-11-22-33-44-55 or 00:11:22:33:44:55
   mac:00-11-22-33-44-55 or mac:00:11:22:33:44:55

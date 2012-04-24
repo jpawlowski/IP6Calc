@@ -87,20 +87,21 @@ void parsemac(const char*s)
 	mergeaddr(ip,640);
 }
 
-void parseip4(const char*s)
+///helper: actually parses an IPv4 addr, use by parseip4 and parseip6
+void parseip4wrk(const char*s,ip6addr ip,int isemb)
 {
 	int i;
-	ip6addr ip={0,0,0,0, 0,0,0,0};
+	memset(ip,0,sizeof(ip6addr));
 	/*check*/
 	int len=strlen(s),cnt,num;
 	if(len<7 || len>16){
-		fprintf(stderr,"address %s is not a valid IPv4 address: must be 4 dot separated decimals\n",s);
+		fprintf(stderr,"address %s is not a valid %sIPv4 address: must be 4 dot separated decimals\n",s,isemb?"embedded ":"");
 		exit(1);
 	}
 	for(i=cnt=0;i<len;i++)
 		if(s[i]=='.')cnt++;
 	if(cnt!=3){
-		fprintf(stderr,"address %s is not a valid IPv4 address: must be 4 dot separated decimals\n",s);
+		fprintf(stderr,"address %s is not a valid %sIPv4 address: must be 4 dot separated decimals\n",s,isemb?"embedded ":"");
 		exit(1);
 	}
 	/*parse*/
@@ -132,45 +133,99 @@ void parseip4(const char*s)
 	}
 	//flush last component
 	ip[7]|=num;
+}
+
+void parseip4(const char*s)
+{
+	ip6addr ip={0,0,0,0, 0,0,0,0};
+	/*do the work*/
+	parseip4wrk(s,ip,0);
 	/*merge, don't change mask*/
 	mergeaddr(ip,300);
 }
 
+//forward decl
 int isip4(const char*);
 
-void parseip6(const char*a)
+void parseip6(const char*ad)
 {
-	int i,j,k,l,mask=255,m,semcnt=0,haddblc=0;
+	int i,j,k,l,mask=255,m,semcnt=0,haddblc=0,size=8;
 	ip6addr ip={0,0,0,0, 0,0,0,0};
-	/*stage 1: parse local addr*/
-	if(a[0]==':' && a[1]!=':'){
-		fprintf(stderr,"address %s is not a valid IPv6 address: it must start with a hex digit or ::\n",a);
+	char a[64],*c;
+	/*stage 0: sanity checks and preps*/
+	if(ad[0]==':' && ad[1]!=':'){
+		fprintf(stderr,"address %s is not a valid IPv6 address: it must start with a hex digit or ::\n",ad);
 		exit(1);
 	}
-	m=-1;
-	for(i=j=0;a[i];i++){
-		if(j>7){
-			fprintf(stderr,"address %s is not a valid IPv6 address: more than 8 segments\n",a);
+	l=strlen(ad);
+	if(l<2 || l>50){
+		fprintf(stderr,"address %s is not a valid IPv6 address: it is too long or too short.\n",ad);
+		exit(1);
+	}
+	strncpy(a,ad,sizeof(a));a[sizeof(a)-1]=0;
+	/*stage 1: find the mask*/
+	c=strrchr(ad,'/');
+	if(c){
+		char*np;
+		*c=0;c++;
+		if(*c==0){
+			fprintf(stderr,"empty prefix in IPv6 address %s\n",ad);
 			exit(1);
 		}
-		if(a[i]=='/')break;
+		mask=strtol(c,&np,10);
+		if(*np!=0){
+			fprintf(stderr,"invalid prefix %s in IPv6 address %s\n",c,ad);
+			exit(1);
+		}
+		if(mask<0 || mask>128){
+			fprintf(stderr,"invalid mask in IPv6 address %s: must be between 0 and 128\n",ad);
+			exit(1);
+		}
+	}
+	/*stage 1.1: if it is just a mask: skip stage 2*/
+	if(a[0]==0){
+		cmask=mask;
+		return;
+	}
+	/*stage 2: find embedded IPv4 addr*/
+	c=strrchr(a,':');
+	if(c==0 || c==a){
+		fprintf(stderr,"invalid IPv6 address %s\n",ad);
+		exit(1);
+	}
+	if(isip4(c+1)){
+		//parse the embedded addr
+		parseip4wrk(c+1,ip,1);
+		//correct the amount of expected segments
+		size=6;
+		//check whether it is preceded by ::, the cut the embedded addr off
+		if(c[-1]==':')c[1]=0;
+		else *c=0;
+	}
+	/*stage 2: parse local addr*/
+	m=-1;
+	for(i=j=0;a[i];i++){
+		if(j>=size){
+			fprintf(stderr,"address %s is not a valid IPv6 address: more than 8 segments\n",ad);
+			exit(1);
+		}
 		if(a[i]==':'){
 			semcnt++;
 			if(!i)continue;
 			if(m<0){
 				/*its :: */
 				if(haddblc){
-					fprintf(stderr,"address %s is not a valid IPv6 address: only one :: is allowed\n",a);
+					fprintf(stderr,"address %s is not a valid IPv6 address: only one :: is allowed\n",ad);
 					exit(1);
 				}
 				haddblc++;
 				l=0;
 				for(k=i+1;a[k];k++)if(a[k]==':')l++;
-				if((7-l)<j){
-					fprintf(stderr,"address %s is not a valid IPv6 address: too many :\n",a);
+				if((size-1-l)<j){
+					fprintf(stderr,"address %s is not a valid IPv6 address: too many :\n",ad);
 					exit(1);
 				}
-				j=7-l;
+				j=size-1-l;
 			}else{
 				ip[j++]=m;m=-1;
 			}
@@ -181,54 +236,31 @@ void parseip6(const char*a)
 			if(a[i]>='a'&&a[i]<='f')m|=a[i]-'a'+10;else
 			if(a[i]>='A'&&a[i]<='F')m|=a[i]-'A'+10;
 			else{
-				fprintf(stderr,"address %s is not a valid IPv6 address: %c is not a hex digit\n",a,a[i]);
+				fprintf(stderr,"address %s is not a valid IPv6 address: %c is not a hex digit\n",ad,a[i]);
 				exit(1);
 			}
 			if(m>0xffff){
-				fprintf(stderr,"address %s is not a valid IPv6 address: max. 4 hex digits per segment\n",a);
+				fprintf(stderr,"address %s is not a valid IPv6 address: max. 4 hex digits per segment\n",ad);
 				exit(1);
 			}
 		}
 	}
 	/*sanity checks*/
 	if(i){
-		if(semcnt<2 || semcnt>7){
-			fprintf(stderr,"address %s is not a valid IPv6 address: not enough or too many segments\n",a);
+		if(semcnt<2 || semcnt>=size){
+			fprintf(stderr,"address %s is not a valid IPv6 address: not enough or too many segments\n",ad);
 			exit(1);
 		}
 		if(i>2)
 		if(a[i-1]==':'&&a[i-2]!=':'){
-			fprintf(stderr,"address %s is not a valid IPv6 address: it must not end with a single :\n",a);
+			fprintf(stderr,"address %s is not a valid IPv6 address: it must not end with a single :\n",ad);
 			exit(1);
 		}
-		if(j!=7){
-			fprintf(stderr,"address %s is not a valid IPv6 address: wrong number of segments\n",a);
+		if(j!=(size-1)){
+			fprintf(stderr,"address %s is not a valid IPv6 address: wrong number of segments\n",ad);
 			exit(1);
 		}
 		if(m>=0)ip[j]=m;
-	}
-	if(a[i]=='/'){
-		/*parse mask*/
-		char*p;
-		i++;
-		if(a[i]==0){
-			fprintf(stderr,"invalid mask: must contain a decimal number 0<=mask<=128\n");
-			exit(1);
-		}
-		mask=strtol(a+i,&p,10);
-		if(*p!=0){
-			fprintf(stderr,"invalid mask: not a decimal number\n");
-			exit(1);
-		}
-		if(mask<0 || mask>128){
-			fprintf(stderr,"invalid mask: must be between 0 and 128\n");
-			exit(1);
-		}
-	}
-	/*stage 1.5: if it is just a mask: skip stage 2*/
-	if(a[0]=='/'){
-		cmask=mask;
-		return;
 	}
 	/*stage 2: merge*/
 	mergeaddr(ip,mask);
@@ -253,12 +285,13 @@ int isip4(const char*a)
 			if(++ctrdot > 3)return 0;
 			num=0;
 		}else{
+			num*=10;
 			num+=*c-'0';
 			if(num>255)return 0;
 		}
 	}
 	//done and survived so far
-	return 1;
+	return ctrdot==3;
 }
 
 ///check that it is a MAC address
@@ -283,7 +316,9 @@ int ismac(const char*a)
 
 void parseaddr(const char*a)
 {
-	/*stage 0: does it have a prefix?*/
+	/*stage 0: ignore empty addresses*/
+	if(*a==0)return;
+	/*stage 1: does it have a prefix?*/
 	if(strncmp("mac:",a,4)==0){
 		parsemac(a+4);
 		return;
@@ -296,7 +331,7 @@ void parseaddr(const char*a)
 		parseip6(a+4);
 		return;
 	}
-	/*stage 1: try to detect syntax (IPv4 and MAC are scanned first, since
+	/*stage 2: try to detect syntax (IPv4 and MAC are scanned first, since
 	they are syntactically more strict)*/
 	if(isip4(a)){
 		parseip4(a);
@@ -306,6 +341,6 @@ void parseaddr(const char*a)
 		parsemac(a);
 		return;
 	}
-	/*stage 2: treat as IPv6*/
+	/*stage 3: treat as IPv6*/
 	parseip6(a);
 }
