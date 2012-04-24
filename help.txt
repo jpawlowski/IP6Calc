@@ -49,6 +49,14 @@ Output formatting:
     print detailed IPv6 output (eg. 2001:db8:0:0:0:0:0:1/128)
   -f | --full
     print full IPv6 output (eg. 2001:0db8:0000:0000:0000:0000:0000:0001)
+  -b | --force-embedded
+    always print IPv6 addresses as embedded IPv4 address
+  -B | --no-embedded
+    never print IPv6 addresses as embedded IPv4 address
+  -a | --auto-embedded
+    automatically decide whether to print IPv6 addresses as embedded IPv4
+    address (does so for ::/96, ::ffff:0/96 and 64:ff9b::/96);
+    this is the default
 
 Immediate output:
   -n | --netid

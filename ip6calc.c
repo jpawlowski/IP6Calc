@@ -31,11 +31,14 @@
 #define OUT_INIT 0x8007
 
 
-static char shortopt[]="-hsdfnNHmiIM64R:r:L:l:eEg";
+static char shortopt[]="-hsdfnNHmiIM64R:r:L:l:eEgbBa";
 static struct option longopt[]= {
  {"short",0,0,'s'},
  {"detail",0,0,'d'},
  {"full",0,0,'f'},
+ {"force-embedded",0,0,'b'},
+ {"no-embedded",0,0,'B'},
+ {"auto-embedded",0,0,'a'},
  {"netid",0,0,'n'},
  {"netmask",0,0,'N'},
  {"hostid",0,0,'H'},
@@ -77,6 +80,9 @@ int main(int argc,char**argv)
                         case 's':setformat(FMT_SHORT);break;
                         case 'd':setformat(FMT_DETAIL);break;
                         case 'f':setformat(FMT_FULL);break;
+			case 'b':setembed(EMB_ALWAYS);break;
+			case 'B':setembed(EMB_NEVER);break;
+			case 'a':setembed(EMB_AUTO);break;
 			//output
                         case 'n':np=0;printaddr(IP6_NETID);break;
                         case 'H':np=0;printaddr(IP6_HOSTID);break;

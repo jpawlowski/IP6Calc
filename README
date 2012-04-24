@@ -24,6 +24,4 @@ see help.txt
 Known Bugs, TODO
 -----------------
 
-add embedded IPv4 output
-
 There are no unit tests yet (this should be doable with a simple script).

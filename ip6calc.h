@@ -29,8 +29,17 @@
 ///print the prefix
 #define IP6_PREFIX 4
 
+///never print as embedded IPv4
+#define EMB_NEVER 0
+///automatically switch to embedded for ::x:y type addresses
+#define EMB_AUTO 1
+///force embedded IPv4 printing
+#define EMB_ALWAYS 2
+
 ///sets the output formatting of IPv6 addresses (use FMT_* constants as argument)
 void setformat(int o);
+///sets the embedding format (use EMB_* constants)
+void setembed(int e);
 ///print the MAC part of the address
 void printmac();
 ///print the last 32 bits as IPv4 address

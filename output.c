@@ -16,19 +16,16 @@
 
 #include "ip6calc.h"
 
-//efficient formatting: 2001:db8::1
-#define FMT_SHORT 0
-//more extensive formatting: 2001:db8:0:0:0:0:0:1
-#define FMT_DETAIL 1
-//extreme formatting: 2001:0db8:0000:0000:0000:0000:0000:0001
-#define FMT_FULL 2
-
-
-int format=FMT_SHORT;
+int format=FMT_SHORT,embed=EMB_AUTO;
 
 void setformat(int f)
 {
 	format=f;
+}
+
+void setembed(int e)
+{
+	embed=e;
 }
 
 void printmac()
@@ -53,24 +50,53 @@ void printip4()
 	printf("%i.%i.%i.%i\n",caddr[6]>>8,caddr[6]&0xff,caddr[7]>>8,caddr[7]&0xff);
 }
 
+int isembedded(const ip6addr ip)
+{
+	//check forced formatting
+	if(embed==EMB_ALWAYS)return 1;
+	if(embed==EMB_NEVER)return 0;
+	//range ::/88 has two embedded ranges
+	if(ip[0]==0 && ip[1]==0 && ip[2]==0 && ip[3]==0 && ip[4]==0){
+		// range ::/96, except ::0 and ::1
+		if(ip[5]==0)
+			return ip[6]!=0 || ip[7]>1;
+		// range ::ffff:0:0/96
+		return ip[5]==0xffff;
+	}
+	//range 64:ff9b::/96
+	if(ip[0]==0x64 && ip[1]==0xff9b && ip[2]==0 && ip[3]==0 && ip[4]==0 && ip[5]==0)
+		return 1;
+	//not embedded
+	return 0;
+}
+
 void printdetail(ip6addr caddr)
 {
-	if(format==FMT_FULL)
-		printf("%04hx:%04hx:%04hx:%04hx:%04hx:%04hx:%04hx:%04hx", caddr[0], caddr[1], caddr[2], caddr[3], caddr[4], caddr[5], caddr[6], caddr[7]);
+	const char*fmts1,*fmts2;
+	if(format==FMT_FULL){
+		fmts1="%04hx:%04hx:%04hx:%04hx:%04hx:%04hx:";fmts2="%04hx:%04hx";
+	}else{
+		fmts1="%hx:%hx:%hx:%hx:%hx:%hx:";fmts2="%hx:%hx";
+	}
+	printf(fmts1, caddr[0], caddr[1], caddr[2], caddr[3], caddr[4], caddr[5]);
+	if(isembedded(caddr))
+		printf("%i.%i.%i.%i", caddr[6]>>8, caddr[6]&0xff, caddr[7]>>8, caddr[7]&0xff);
 	else
-		printf("%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx", caddr[0], caddr[1], caddr[2], caddr[3], caddr[4], caddr[5], caddr[6], caddr[7]);
+		printf(fmts2, caddr[6], caddr[7]);
 }
 
 void printshort(ip6addr caddr)
 {
-	int zs=-1,zl=0,mzs=-1,mzl=0,i;
+	int zs=-1,zl=0,mzs=-1,mzl=0,i,size=8;
 	/*shortcut: is it all zero?*/
 	if(!caddr[0] && !caddr[1] && !caddr[2] && !caddr[3] && !caddr[4] && !caddr[5] && !caddr[6] && !caddr[7]){
 		printf("::");
 		return;
 	}
+	/*print in embedded format?*/
+	if(isembedded(caddr))size=6;
 	/*find longest stretch of zeroes*/
-	for(i=0;i<8;i++){
+	for(i=0;i<size;i++){
 		if(caddr[i]){
 			/*check for maximum*/
 			if(zl>mzl){
@@ -97,12 +123,16 @@ void printshort(ip6addr caddr)
 		if(i)printf(":");
 		printf("%hx",caddr[i]);
 	}
-	if(i>=7)return;
-	printf("::");
-	for(i=mzs+mzl;i<8;i++){
-		printf("%hx",caddr[i]);
-		if(i<7)printf(":");
+	if(i<(size-1)){
+		printf("::");
+		for(i=mzs+mzl;i<size;i++){
+			printf("%hx",caddr[i]);
+			if(i<7)printf(":");
+		}
 	}
+	//print embedded
+	if(size<8)
+		printf("%i.%i.%i.%i", caddr[6]>>8, caddr[6]&0xff, caddr[7]>>8, caddr[7]&0xff);
 }
 
 void printaddr(int comp)
