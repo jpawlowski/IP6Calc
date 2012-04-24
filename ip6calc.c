@@ -91,8 +91,8 @@ int main(int argc,char**argv)
 			case 'I':np=0;printaddr(IP6_HOSTID|IP6_PREFIX);break;
 			case 'i':np=0;printaddr(IP6_NETID|IP6_HOSTID);break;
 			case '6':np=0;printaddr(IP6_NETID|IP6_HOSTID|IP6_PREFIX);break;
-			case '4':printip4();break;
-                        case 'M':printmac();break;
+			case '4':np=0;printip4();break;
+                        case 'M':np=0;printmac();break;
 			//mode
 			case 'e':setmergemode(MERGE_HOST);break;
 			case 'E':setmergemode(MERGE_NET);break;

@@ -26,7 +26,7 @@ clean:
 distclean: clean
 	-rm -f ip6calc .config.make
 
-.PHONY: clean distclean
+.PHONY: clean distclean tests
 
 .config.make:
 	./configure
@@ -40,3 +40,8 @@ install:
 	$(INSTALL) -d $(DESTDIR)$(DOCDIR)
 	$(INSTALL) -m 644 -t $(DESTDIR)$(DOCDIR) help.txt
 	$(INSTALL) -m 644 -t $(DESTDIR)$(DOCDIR) README
+
+tests:
+	tests/parsing.sh
+	tests/output.sh
+	tests/calc.sh

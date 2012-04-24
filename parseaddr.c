@@ -164,23 +164,28 @@ void parseip6(const char*ad)
 	}
 	strncpy(a,ad,sizeof(a));a[sizeof(a)-1]=0;
 	/*stage 1: find the mask*/
-	c=strrchr(ad,'/');
+	c=strrchr(a,'/');
 	if(c){
+		//check syntax
 		char*np;
 		*c=0;c++;
 		if(*c==0){
 			fprintf(stderr,"empty prefix in IPv6 address %s\n",ad);
 			exit(1);
 		}
+		//convert
 		mask=strtol(c,&np,10);
 		if(*np!=0){
 			fprintf(stderr,"invalid prefix %s in IPv6 address %s\n",c,ad);
 			exit(1);
 		}
+		//sanity check
 		if(mask<0 || mask>128){
 			fprintf(stderr,"invalid mask in IPv6 address %s: must be between 0 and 128\n",ad);
 			exit(1);
 		}
+		//cut off
+		c[-1]=0;
 	}
 	/*stage 1.1: if it is just a mask: skip stage 2*/
 	if(a[0]==0){
