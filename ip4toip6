@@ -9,7 +9,7 @@ ip -4 addr | while read ln ; do
  echo $ln |egrep -q '^[0-9]+:' && {
 	eval $(echo $ln|tr -d : | (read cnum cdev xx ; echo cnum=$cnum cdev=$cdev))
  } || {
-	eval $(echo $ln|tr / " "| (read inet ip xx ; echo ipaddr=$ip))
+	eval $(echo $ln|tr / " "| (read inet ip xx ; echo ipaddr=$ip ; test "$inet" = "inet"||echo continue ))
 	ip6=$(printf "%x%02x:%x%02x" `echo $ipaddr|tr . " "`)
 	printf "%-8s %4i %-16s %-16s %s\n" $cdev $cnum $ipaddr ::$ip6 2002:$ip6::/48
  }
