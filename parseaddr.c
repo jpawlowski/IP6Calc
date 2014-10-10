@@ -131,6 +131,11 @@ void parseip4wrk(const char*s,ip6addr ip,int isemb)
 		fprintf(stderr,"address %s contains illegal character '%c'\n",s,s[i]);
 		exit(1);
 	}
+	//check last component
+        if(num<0 || num>255){
+	       fprintf(stderr,"address %s contains an illegal number %i\n",s,num);
+               exit(1);
+        }
 	//flush last component
 	ip[7]|=num;
 }
