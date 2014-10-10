@@ -8,7 +8,7 @@ echo '//See genhelp.sh for the generator' >>help.h
 
 generate(){
 	echo '#define' $1 '\' >>help.h
-	cat $2 |sed 's/"/\\"/g' | sed 's/^\(.*\)$/ "\1\\n"\\/' >>help.h
+	cat $2 |sed 's/\\/\\\\/' |sed 's/"/\\"/g' | sed 's/^\(.*\)$/ "\1\\n"\\/' >>help.h
 	echo '""' >>help.h
 }
 
